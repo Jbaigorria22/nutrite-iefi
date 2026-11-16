@@ -66,7 +66,11 @@
       <div class="contacto u-mt-6">
         <section class="contacto__panel">
           <h2>Envianos un mensaje</h2>
-          <form class="form u-mt-4" id="form-contacto" novalidate>
+          <!-- Funciona solo con HTML: el navegador valida (required, minlength) y envía a FormSubmit.
+               Con JavaScript, contacto.js toma el control: valida con mensajes propios y envía sin recargar. -->
+          <form class="form u-mt-4" id="form-contacto" action="https://formsubmit.co/ff53929fdaeef23e365a9ecf977dd137" method="POST">
+            <input type="hidden" name="_subject" value="Nueva consulta desde la web">
+            <input type="hidden" name="_template" value="table">
             <div class="form__fila form__fila--2col">
               <div class="campo"><label class="campo__label" for="nombre">Nombre</label><input class="campo__input" id="nombre" name="nombre" type="text" required minlength="3" placeholder="Julieta Fernández"><span class="campo__ayuda"></span></div>
               <div class="campo"><label class="campo__label" for="email">Email</label><input class="campo__input" id="email" name="email" type="email" required placeholder="tu@email.com"><span class="campo__ayuda"></span></div>

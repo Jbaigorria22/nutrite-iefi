@@ -81,6 +81,10 @@ async function enviarMensaje(evento) {
 }
 
 function inicializarEventos() {
+  // Con JavaScript activo, la validación la hace validar() con mensajes propios:
+  // se desactivan los globos nativos del navegador (sin JS, el HTML valida solo).
+  form.noValidate = true;
+
   // guardo el texto de ayuda original para restaurarlo cuando el campo es válido
   form.querySelectorAll(".campo__ayuda").forEach((ayuda) => {
     ayuda.dataset.textoOriginal = ayuda.textContent;
