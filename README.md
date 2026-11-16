@@ -18,7 +18,7 @@ Sitio web de Nutrite, dietética online de Córdoba. Proyecto final (IEFI) de **
 
 ## Tecnologías
 
-HTML5, CSS3 y JavaScript con módulos ES (`import`/`export`), `fetch`, `try/catch` y `localStorage`. Tests con el runner nativo de Node (`node:test`). CI/CD con GitHub Actions y publicación en GitHub Pages.
+HTML5, CSS3 y JavaScript con módulos ES (`import`/`export`), `fetch`, `try/catch` y `localStorage`. Tests unitarios con el runner nativo de Node (`node:test`) y tests end-to-end con [Playwright](https://playwright.dev). CI/CD con GitHub Actions y publicación en GitHub Pages.
 
 ## Estructura
 
@@ -31,6 +31,7 @@ HTML5, CSS3 y JavaScript con módulos ES (`import`/`export`), `fetch`, `try/catc
 │   ├── img/        imágenes e íconos
 │   └── js/         módulos JavaScript
 ├── tests/          tests unitarios (node:test)
+├── e2e/            tests end-to-end (Playwright)
 └── .github/workflows/ci-cd.yml   pipeline CI/CD
 ```
 
@@ -48,7 +49,9 @@ HTML5, CSS3 y JavaScript con módulos ES (`import`/`export`), `fetch`, `try/catc
 
 ## Tests
 
-Requiere Node.js 18 o superior. No hay dependencias que instalar.
+### Unitarios (node:test)
+
+Prueban funciones aisladas. No requieren instalar nada (Node.js 18 o superior).
 
 ```
 npm test
@@ -56,18 +59,30 @@ npm test
 
 Se testean `filtrarProductos`, `ordenarProductos`, `calcularSubtotal`, `calcularEnvio`, `contarProductos`, `armarDetallePedido` y `enviarEmail` (esta última con `fetch` simulado, sin enviar emails reales).
 
+### End-to-end (Playwright)
+
+Abren el sitio en un navegador Chromium y lo recorren como un usuario: catálogo (filtros, búsqueda, orden), carrito (agregar, persistencia en `localStorage`, totales), checkout completo (validaciones, envío del pedido y notificación, caso de error) y contacto. Las llamadas a FormSubmit se interceptan, así que no se envían emails reales. Cada test guarda capturas en `capturas-e2e/`.
+
+```
+npm install
+npx playwright install chromium
+npm run test:e2e
+npx playwright show-report
+```
+
 ## CI/CD
 
 El workflow `.github/workflows/ci-cd.yml` se ejecuta en cada push y pull request a `main`:
 
-1. **CI — Tests unitarios:** instala Node y ejecuta `npm test`.
-2. **CD — Despliegue:** solo si los tests pasan y el cambio llegó a `main`, publica el sitio en GitHub Pages.
+1. **CI — Tests unitarios:** ejecuta `npm test`.
+2. **CI — Tests end-to-end:** instala Chromium, ejecuta Playwright y guarda el reporte y las capturas como artefacto descargable del run.
+3. **CD — Despliegue:** solo si los dos jobs de tests pasan y el cambio llegó a `main`, publica el sitio en GitHub Pages.
 
 Si algún test falla, el despliegue no se ejecuta y la versión en producción no cambia.
 
 ## Configuración del envío de emails
 
-En `assets/js/config.js`, reemplazar `TU_EMAIL_AQUI` en `URL_EMAIL` por el email que recibe los pedidos. El primer envío dispara un email de activación de FormSubmit que hay que confirmar una única vez.
+`URL_EMAIL` en `assets/js/config.js` usa el alias que FormSubmit asigna al activar el formulario, para no exponer el email real de la tienda en el código. El primer envío desde un dominio nuevo dispara un email de activación que hay que confirmar una única vez.
 
 ## Ver el sitio en local
 

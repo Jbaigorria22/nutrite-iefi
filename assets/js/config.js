@@ -7,6 +7,6 @@ export const URL_PRODUCTOS = "assets/data/productos.json";
 export const URL_ARTICULOS = "assets/data/articulos.json";
 
 // Envío de emails con FormSubmit (servicio gratuito, sin backend).
-// Reemplazá TU_EMAIL_AQUI por el email que recibe los pedidos y consultas
-// (o por el alias que te da FormSubmit después de activarlo).
-export const URL_EMAIL = "https://formsubmit.co/ajax/jbaigorria.aws@gmail.com";
+// Se usa el alias que da FormSubmit al activar el formulario, en lugar del email real,
+// para que la dirección de la tienda no quede visible en el código público.
+export const URL_EMAIL = "https://formsubmit.co/ajax/ff53929fdaeef23e365a9ecf977dd137";

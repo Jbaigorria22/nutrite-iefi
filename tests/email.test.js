@@ -38,6 +38,19 @@ describe("enviarEmail", () => {
     await assert.rejects(enviarEmail(URL_PRUEBA, {}), /Activation/);
   });
 
+  it("cancela el envío si el servicio no responde a tiempo", async () => {
+    // fetch falso que nunca responde: solo termina cuando se cancela con la señal
+    globalThis.fetch = (url, opciones) =>
+      new Promise((resolve, reject) => {
+        const espera = setTimeout(resolve, 5000); // mantiene vivo el proceso mientras espera
+        opciones.signal.addEventListener("abort", () => {
+          clearTimeout(espera);
+          reject(opciones.signal.reason);
+        });
+      });
+    await assert.rejects(enviarEmail(URL_PRUEBA, {}, 50), /no respondió a tiempo/);
+  });
+
   it("avisa si falta configurar el email de destino", async () => {
     await assert.rejects(
       enviarEmail("https://formsubmit.co/ajax/TU_EMAIL_AQUI", {}),

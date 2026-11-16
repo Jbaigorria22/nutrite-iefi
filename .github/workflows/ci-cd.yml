@@ -1,6 +1,8 @@
 # Pipeline CI/CD de Nutrite
-# CI: en cada push o pull request a main se ejecutan los tests unitarios (node:test).
-# CD: si los tests pasan y el cambio llegó a main, el sitio se publica en GitHub Pages.
+# CI: en cada push o pull request a main se ejecutan
+#     1) los tests unitarios (node:test) y
+#     2) los tests end-to-end (Playwright), que recorren el sitio en un navegador real.
+# CD: si TODOS los tests pasan y el cambio llegó a main, el sitio se publica en GitHub Pages.
 # Si un test falla, el despliegue NO se ejecuta y producción queda como estaba.
 
 name: CI/CD
@@ -33,12 +35,44 @@ jobs:
         with:
           node-version: 22
 
-      - name: Ejecutar tests
+      - name: Ejecutar tests unitarios
         run: npm test
+
+  e2e:
+    name: Tests end-to-end
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar el código
+        uses: actions/checkout@v4
+
+      - name: Instalar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Instalar el navegador Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Ejecutar tests E2E
+        run: npm run test:e2e
+
+      - name: Guardar reporte y capturas
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reporte-e2e
+          path: |
+            playwright-report/
+            capturas-e2e/
+          retention-days: 14
 
   deploy:
     name: Desplegar a producción
-    needs: test
+    needs: [test, e2e]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment:
