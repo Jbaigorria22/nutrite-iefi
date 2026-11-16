@@ -4,7 +4,7 @@
 
 export function filtrarProductos(productos, { atributos, categorias, soloConStock, busqueda }) {
   return productos.filter((producto) => {
-    const cumpleAtributos = atributos.every((attr) => producto.badges.includes(attr));
+    const cumpleAtributos = atributos.some((attr) => producto.badges.includes(attr));
     const cumpleCategoria = categorias.length === 0 || categorias.includes(producto.categoria);
     const cumpleStock = !soloConStock || producto.stock.estado !== "sin-stock";
     const cumpleBusqueda =
