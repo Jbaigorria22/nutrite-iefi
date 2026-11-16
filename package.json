@@ -1,0 +1,10 @@
+{
+  "name": "nutrite-iefi",
+  "version": "1.0.0",
+  "description": "Nutrite — dietética online. Proyecto IEFI de Aplicaciones Web 1 (IES Siglo 21).",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  }
+}

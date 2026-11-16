@@ -1,5 +1,6 @@
 import { obtenerProductos } from './datos.js'
-import { URL_PRODUCTOS } from './config.js'
+import { enviarEmail } from './email.js'
+import { URL_PRODUCTOS, URL_EMAIL } from './config.js'
 import {
     envios,
     planesCuotas,
@@ -12,6 +13,7 @@ import {
     calcularSubtotal,
     calcularEnvio,
     contarProductos,
+    armarDetallePedido,
     renderizadoCuotas
 } from './funciones-carrito.js'
 
@@ -42,6 +44,7 @@ const formEntrega = document.getElementById('form-entrega')
 const opcionesEntrega = document.getElementById('opciones-entrega')
 const camposDireccion = document.getElementById('campos-direccion')
 const botonesVolver = document.querySelectorAll('[data-ir-paso]')
+const estadoPedido = document.getElementById('checkout-estado')
 
 function calcularEnvioActual() {
     return calcularEnvio(subtotal, leerEnvio())
@@ -236,28 +239,54 @@ function escaparHtml(texto) {
     return div.innerHTML
 }
 
-function mostrarConfirmacion() {
-    const numeroPedido = 'NUT-' + Math.floor(100000 + Math.random() * 900000)
-    const totalFinal = calcularTotalFinal()
+function describirPago() {
     const nombresMedios = {
         credito: 'Tarjeta de crédito en ' + cuotasElegidas + ' cuota(s)',
         debito: 'Tarjeta de débito',
         transferencia: 'Transferencia (10% de descuento)',
         billetera: 'Billetera virtual'
     }
+    return nombresMedios[medioPago]
+}
 
-    let direccion = 'Retiro en punto Nutrite (Córdoba Capital)'
-    if (leerEnvio() != 'retiro') {
-        direccion = escaparHtml(datosEntrega.calle + ', ' + datosEntrega.ciudad + ' (CP ' + datosEntrega.cp + ')')
+function describirDireccion() {
+    if (leerEnvio() == 'retiro') {
+        return 'Retiro en punto Nutrite (Córdoba Capital)'
     }
+    return datosEntrega.calle + ', ' + datosEntrega.ciudad + ' (CP ' + datosEntrega.cp + ')'
+}
+
+// Datos que se envían por email (FormSubmit usa los campos que empiezan con _ como opciones)
+function armarEmailPedido(numeroPedido) {
+    const total = formatearPrecio(calcularTotalFinal())
+    return {
+        _subject: 'Nuevo pedido ' + numeroPedido + ' — Nutrite',
+        _template: 'table',
+        _autoresponse: '¡Gracias por tu compra en Nutrite! Recibimos tu pedido ' + numeroPedido +
+            ' por ' + total + '. Te vamos a contactar para coordinar la entrega.',
+        pedido: numeroPedido,
+        nombre: datosCliente.nombre,
+        email: datosCliente.email,
+        telefono: datosCliente.telefono,
+        productos: armarDetallePedido(carrito, productos).join('\n'),
+        entrega: envios[leerEnvio()].nombre,
+        direccion: describirDireccion(),
+        notas: datosEntrega.notas || '-',
+        pago: describirPago(),
+        total: total
+    }
+}
+
+function mostrarConfirmacion(numeroPedido) {
+    const totalFinal = calcularTotalFinal()
 
     paneles[3].innerHTML = `
     <h1 class="checkout__titulo">¡Gracias por tu compra, ${escaparHtml(datosCliente.nombre.split(' ')[0])}!</h1>
     <p>Tu pedido <strong>${numeroPedido}</strong> fue registrado. Te enviamos el detalle a <strong>${escaparHtml(datosCliente.email)}</strong>.</p>
     <div class="resumen u-mt-4">
         <div class="resumen__linea"><span>Entrega</span><span>${envios[leerEnvio()].nombre}</span></div>
-        <div class="resumen__linea"><span>Dirección</span><span>${direccion}</span></div>
-        <div class="resumen__linea"><span>Pago</span><span>${nombresMedios[medioPago]}</span></div>
+        <div class="resumen__linea"><span>Dirección</span><span>${escaparHtml(describirDireccion())}</span></div>
+        <div class="resumen__linea"><span>Pago</span><span>${describirPago()}</span></div>
         <div class="resumen__linea resumen__linea--total"><span>Total pagado</span><span>${formatearPrecio(totalFinal)}</span></div>
     </div>
     <div class="checkout__navegacion">
@@ -270,6 +299,29 @@ function mostrarConfirmacion() {
     guardarCarrito([])
     contadorProductos.textContent = 0
     irAPaso(3)
+}
+
+// Envía el pedido por email y, si sale bien, muestra la confirmación.
+// Si falla, avisa en la interfaz y deja el carrito intacto para reintentar.
+async function confirmarCompra() {
+    const numeroPedido = 'NUT-' + Math.floor(100000 + Math.random() * 900000)
+
+    botonConfirmar.disabled = true
+    botonConfirmar.textContent = 'Enviando pedido...'
+    estadoPedido.textContent = ''
+    estadoPedido.classList.remove('is-error')
+
+    try {
+        await enviarEmail(URL_EMAIL, armarEmailPedido(numeroPedido))
+        mostrarConfirmacion(numeroPedido)
+    } catch (error) {
+        console.error(error)
+        estadoPedido.textContent = 'No pudimos enviar tu pedido. Revisá tu conexión e intentá de nuevo.'
+        estadoPedido.classList.add('is-error')
+    } finally {
+        botonConfirmar.disabled = false
+        botonConfirmar.textContent = 'Confirmar compra →'
+    }
 }
 
 // Eventos
@@ -324,9 +376,7 @@ function inicializarEventos() {
         })
     })
 
-    botonConfirmar.addEventListener('click', (evento) => {
-        mostrarConfirmacion()
-    })
+    botonConfirmar.addEventListener('click', confirmarCompra)
 }
 
 function mostrarCarritoVacio() {

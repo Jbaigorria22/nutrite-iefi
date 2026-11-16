@@ -97,6 +97,14 @@ function contarProductos(carrito) {
     return cantidad
 }
 
+// Arma el detalle del pedido como texto (una línea por producto) para el email
+function armarDetallePedido(carrito, productos) {
+    return carrito.map((item) => {
+        const producto = buscarProducto(productos, item.id)
+        return item.cantidad + ' x ' + producto.nombre + ' — ' + formatearPrecio(producto.precio * item.cantidad)
+    })
+}
+
 function renderizadoCarrito(contenedor, carrito, productos) {
 
     let carritoHTML = ''
@@ -181,6 +189,7 @@ export {
     calcularSubtotal,
     calcularEnvio,
     contarProductos,
+    armarDetallePedido,
     renderizadoCarrito,
     renderizadoCuotas
 }
